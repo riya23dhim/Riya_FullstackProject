@@ -1,0 +1,81 @@
+@import "tailwindcss";
+
+:root {
+  --primary: 221 83% 53%;
+  /* Blue 600 */
+  --secondary: 215 25% 27%;
+  /* Slate 700 */
+  --background: 210 40% 98%;
+  /* Slate 50/100 */
+  --foreground: 222 47% 11%;
+  /* Slate 950 */
+  --surface: 0 0% 100%;
+  --muted: 215 16% 47%;
+}
+
+@theme {
+  --color-primary: hsl(var(--primary));
+  --color-secondary: hsl(var(--secondary));
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-surface: hsl(var(--surface));
+  --color-muted: hsl(var(--muted));
+}
+
+body {
+  margin: 0;
+  font-family: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+@keyframes swing {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  20% {
+    transform: rotate(15deg);
+  }
+
+  40% {
+    transform: rotate(-10deg);
+  }
+
+  60% {
+    transform: rotate(5deg);
+  }
+
+  80% {
+    transform: rotate(-5deg);
+  }
+
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+.animate-swing {
+  animation: swing 1s ease-in-out infinite;
+  transform-origin: top center;
+}
