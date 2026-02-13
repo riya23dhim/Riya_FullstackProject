@@ -32,8 +32,7 @@ export default function Navbar() {
         if (user && tokens?.accessToken) {
             const newSocket = io(import.meta.env.VITE_SOCKET_URL!, {
     query: { token: tokens.accessToken },
-    transports: ["websocket"], 
-    withCredentials: true,
+   
 });
 
             newSocket.on('notification', (notif: Notification) => {
