@@ -30,9 +30,11 @@ export default function Navbar() {
 
     useEffect(() => {
         if (user && tokens?.accessToken) {
-            const newSocket = io('http://localhost:3000', {
-                query: { token: tokens.accessToken },
-            });
+            const newSocket = io(import.meta.env.VITE_SOCKET_URL!, {
+    query: { token: tokens.accessToken },
+    transports: ["websocket"], 
+    withCredentials: true,
+});
 
             newSocket.on('notification', (notif: Notification) => {
                 setNotifications((prev) => [notif, ...prev]);
