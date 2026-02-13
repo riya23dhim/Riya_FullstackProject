@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPinOff } from 'lucide-react';
+import { ArrowLeft} from 'lucide-react';
 
 export default function NotFound() {
     const navigate = useNavigate();
