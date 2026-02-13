@@ -3,6 +3,7 @@ import { toast } from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { notificationApi } from '../api/notification.api';
 import { io } from 'socket.io-client';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import { Bell, Shield, User as UserIcon, LogOut, AppWindow, Inbox } from 'lucide-react';
 import type { Notification } from '../types/notification';
@@ -13,7 +14,10 @@ export default function Navbar() {
     const [showDropdown, setShowDropdown] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    // Click outside listener
+    const location = useLocation();
+    const navigate = useNavigate();
+
+    // Click outside listener for dropdown
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -28,12 +32,12 @@ export default function Navbar() {
         };
     }, [showDropdown]);
 
+    // WebSocket connection for notifications
     useEffect(() => {
         if (user && tokens?.accessToken) {
             const newSocket = io(import.meta.env.VITE_SOCKET_URL!, {
-    query: { token: tokens.accessToken },
-   
-});
+                query: { token: tokens.accessToken },
+            });
 
             newSocket.on('notification', (notif: Notification) => {
                 setNotifications((prev) => [notif, ...prev]);
@@ -65,7 +69,7 @@ export default function Navbar() {
                 {/* Logo Section */}
                 <div
                     className="flex items-center gap-2.5 cursor-pointer group"
-                    onClick={() => window.location.href = '/'}
+                    onClick={() => navigate('/')}
                 >
                     <div className="w-8 h-8 bg-[#4F46E5] rounded-xl flex items-center justify-center text-white shadow-md shadow-indigo-100/50 transition-transform group-hover:scale-105">
                         <AppWindow size={18} strokeWidth={2.5} />
@@ -79,16 +83,22 @@ export default function Navbar() {
                     {/* Admin Access Control */}
                     {user?.role === 'ADMIN' && (
                         <div className="flex items-center space-x-3 border-r border-[#E5E7EB] pr-4">
-                            {window.location.pathname === '/admin' ? (
-                                <a href="/" className="flex items-center space-x-2 text-[#10B981] hover:text-[#059669] text-[11px] font-bold transition-all">
+                            {location.pathname === '/admin' ? (
+                                <button
+                                    onClick={() => navigate('/')}
+                                    className="flex items-center space-x-2 text-[#10B981] hover:text-[#059669] text-[11px] font-bold transition-all"
+                                >
                                     <UserIcon size={14} />
                                     <span>User Panel</span>
-                                </a>
+                                </button>
                             ) : (
-                                <a href="/admin" className="flex items-center space-x-2 text-[#4F46E5] hover:text-[#4338CA] text-[11px] font-bold transition-all">
+                                <button
+                                    onClick={() => navigate('/admin')}
+                                    className="flex items-center space-x-2 text-[#4F46E5] hover:text-[#4338CA] text-[11px] font-bold transition-all"
+                                >
                                     <Shield size={14} />
                                     <span>Admin Panel</span>
-                                </a>
+                                </button>
                             )}
                         </div>
                     )}
@@ -146,10 +156,13 @@ export default function Navbar() {
 
                     {/* User Profile Action Area */}
                     <div className="flex items-center gap-2">
-                        <a href="/profile" className="flex items-center gap-2 p-1 rounded-xl hover:bg-[#F9FAFB] transition-all group border border-transparent hover:border-[#F3F4F6]">
+                        <button
+                            onClick={() => navigate('/profile')}
+                            className="flex items-center gap-2 p-1 rounded-xl hover:bg-[#F9FAFB] transition-all group border border-transparent hover:border-[#F3F4F6]"
+                        >
                             <div className="relative">
                                 <img
-                                    src={user?.avatar ? `http://localhost:3000${user.avatar}` : '/default-avatar.png'}
+                                    src={user?.avatar ? `${import.meta.env.VITE_API_URL}${user.avatar}` : '/default-avatar.png'}
                                     className="w-7 h-7 rounded-lg object-cover ring-2 ring-white shadow-sm transition-transform group-hover:scale-105"
                                 />
                                 <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-[#10B981] border-2 border-white rounded-full"></div>
@@ -157,7 +170,7 @@ export default function Navbar() {
                             <div className="hidden lg:block pr-1">
                                 <div className="text-[#111827] font-bold text-xs tracking-tight leading-none">{user?.name}</div>
                             </div>
-                        </a>
+                        </button>
                         <button
                             onClick={() => {
                                 logout();
@@ -174,4 +187,3 @@ export default function Navbar() {
         </nav>
     );
 }
-
