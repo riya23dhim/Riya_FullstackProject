@@ -1,196 +1,189 @@
-import { useState } from 'react';
-import type { FormEvent } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { userApi } from '../api/user.api';
-import Navbar from '../components/Navbar';
-import { Camera, User, Mail, Save, CheckCircle, Smartphone, LogOut } from 'lucide-react';
-import ConfirmationModal from '../components/ConfirmationModal';
+import { useEffect, useState, useRef } from 'react';
 import { toast } from 'react-hot-toast';
+import { useAuth } from '../context/AuthContext';
+import { notificationApi } from '../api/notification.api';
+import { io } from 'socket.io-client';
+import { useLocation, useNavigate } from 'react-router-dom';
 
-export default function Profile() {
-    const { user, login } = useAuth();
-    const [name, setName] = useState(user?.name || '');
-    const [email, setEmail] = useState(user?.email || '');
-    const [avatarPreview, setAvatarPreview] = useState<string | null>(user?.avatar || null);
-    const [selectedFile, setSelectedFile] = useState<File | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [showLogoutModal, setShowLogoutModal] = useState(false);
+import { Bell, Shield, User as UserIcon, LogOut, AppWindow, Inbox } from 'lucide-react';
+import type { Notification } from '../types/notification';
 
-    const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
+export default function Navbar() {
+    const { user, logout, tokens } = useAuth();
+    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [showDropdown, setShowDropdown] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
 
-        setSelectedFile(file);
-        setAvatarPreview(URL.createObjectURL(file));
-    };
+    const location = useLocation();
+    const navigate = useNavigate();
 
-    const uploadAvatar = async () => {
-        if (!selectedFile) return;
-
-        setLoading(true);
-        const formData = new FormData();
-        formData.append('file', selectedFile);
-
-        try {
-            const { data } = await userApi.uploadAvatar(formData);
-            setAvatarPreview(data.avatar);
-            setSelectedFile(null);
-            if (user) {
-                const updatedUser = { ...user, avatar: data.avatar };
-                login({ accessToken: localStorage.getItem('accessToken')!, refreshToken: localStorage.getItem('refreshToken')! }, updatedUser);
+    // Click outside listener for dropdown
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setShowDropdown(false);
             }
-            toast.success('Avatar updated successfully');
-        } catch (err) {
-            toast.error('Avatar upload failed');
-        } finally {
-            setLoading(false);
         }
+        if (showDropdown) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showDropdown]);
+
+    // WebSocket connection for notifications
+    useEffect(() => {
+        if (user && tokens?.accessToken) {
+            const newSocket = io(import.meta.env.VITE_SOCKET_URL!, {
+                query: { token: tokens.accessToken },
+            });
+
+            newSocket.on('notification', (notif: Notification) => {
+                setNotifications((prev) => [notif, ...prev]);
+            });
+
+            // Fetch initial notifications
+            notificationApi.getAll(1, 10).then((res) => {
+                setNotifications(res.data.data);
+            });
+
+            return () => {
+                newSocket.disconnect();
+            };
+        }
+    }, [user, tokens]);
+
+    const markRead = async (id: string) => {
+        await notificationApi.markAsRead(id);
+        setNotifications((prev) =>
+            prev.map((n) => (n._id === id ? { ...n, isRead: true } : n))
+        );
     };
 
-    const updateProfile = async (e: FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        setLoading(true);
-        try {
-            const { data } = await userApi.updateMe({ name, email });
-            login({ accessToken: localStorage.getItem('accessToken')!, refreshToken: localStorage.getItem('refreshToken')! }, data);
-            toast.success('Profile updated');
-        } catch (err) {
-            toast.error('Update failed');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleLogoutAll = async () => {
-        try {
-            await userApi.logoutAll();
-            toast.success('Logged out from all devices');
-            login({ accessToken: '', refreshToken: '' }, null as any); // Force logout locally
-            window.location.href = '/login';
-        } catch (err) {
-            toast.error('Failed to logout from all devices');
-        }
-    };
+    const unreadCount = notifications.filter((n) => !n.isRead).length;
 
     return (
-        <div className="min-h-screen bg-[#FAFAFA] text-[#111827] font-sans pb-20">
-            <ConfirmationModal
-                isOpen={showLogoutModal}
-                onClose={() => setShowLogoutModal(false)}
-                onConfirm={handleLogoutAll}
-                title="Logout from all devices?"
-                message="This will invalidate all active sessions across all your devices. You will need to log in again on this device as well."
-                confirmText="Logout All"
-                isDanger={true}
-            />
-            <Navbar />
-            <div className="container mx-auto p-6 max-w-5xl pt-16">
-                <div className="mb-12">
-                    <h1 className="text-3xl font-bold tracking-tight text-[#111827]">Account Settings</h1>
-                    <p className="text-[#6B7280] font-medium mt-1">Manage your identity and communication preferences.</p>
+        <nav className="bg-white sticky top-0 z-50 border-b border-[#E5E7EB] py-2.5">
+            <div className="container mx-auto px-6 flex justify-between items-center">
+                {/* Logo Section */}
+                <div
+                    className="flex items-center gap-2.5 cursor-pointer group"
+                    onClick={() => navigate('/')}
+                >
+                    <div className="w-8 h-8 bg-[#4F46E5] rounded-xl flex items-center justify-center text-white shadow-md shadow-indigo-100/50 transition-transform group-hover:scale-105">
+                        <AppWindow size={18} strokeWidth={2.5} />
+                    </div>
+                    <div>
+                        <span className="text-lg font-bold text-[#111827] tracking-tight">Nexus</span>
+                    </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                    {/* Sidebar / Photo Selection */}
-                    <div className="lg:col-span-4 space-y-6">
-                        <div className="bg-white p-8 rounded-2xl border border-[#E5E7EB] shadow-sm text-center">
-                            <div className="relative inline-block group">
-                                <img
-                                    src={avatarPreview ? (avatarPreview.startsWith('http') || avatarPreview.startsWith('data:') || avatarPreview.startsWith('blob:') ? avatarPreview : `http://localhost:3000${avatarPreview}`) : '/default-avatar.png'}
-                                    alt="Profile"
-                                    className="w-40 h-40 rounded-2xl object-cover ring-4 ring-[#FAFAFA] shadow-lg transition-transform hover:scale-[1.02] border border-[#E5E7EB]"
-                                />
-                                <label className="absolute bottom-3 right-3 bg-white p-2.5 rounded-xl shadow-xl border border-[#E5E7EB] text-[#4F46E5] cursor-pointer hover:bg-[#EEF2FF] transition-all">
-                                    <Camera size={18} />
-                                    <input type="file" className="hidden" onChange={handleAvatarChange} accept="image/*" />
-                                </label>
-                            </div>
-
-                            <div className="mt-6">
-                                <h2 className="text-lg font-bold text-[#111827]">{user?.name}</h2>
-                                <p className="text-[#6B7280] text-xs font-medium uppercase tracking-wider mt-1">{user?.role} Profile</p>
-                            </div>
-
-                            {selectedFile && !loading && (
+                <div className="flex items-center space-x-4">
+                    {/* Admin Access Control */}
+                    {user?.role === 'ADMIN' && (
+                        <div className="flex items-center space-x-3 border-r border-[#E5E7EB] pr-4">
+                            {location.pathname === '/admin' ? (
                                 <button
-                                    onClick={uploadAvatar}
-                                    className="mt-6 w-full bg-[#4F46E5] hover:bg-[#4338CA] text-white py-3 rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2"
+                                    onClick={() => navigate('/')}
+                                    className="flex items-center space-x-2 text-[#10B981] hover:text-[#059669] text-[11px] font-bold transition-all"
                                 >
-                                    <CheckCircle size={14} /> Update Photo
+                                    <UserIcon size={14} />
+                                    <span>User Panel</span>
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={() => navigate('/admin')}
+                                    className="flex items-center space-x-2 text-[#4F46E5] hover:text-[#4338CA] text-[11px] font-bold transition-all"
+                                >
+                                    <Shield size={14} />
+                                    <span>Admin Panel</span>
                                 </button>
                             )}
+                        </div>
+                    )}
 
-                            {loading && (
-                                <div className="mt-6 py-3 text-[#4F46E5] text-xs font-bold animate-pulse uppercase tracking-widest bg-[#EEF2FF] rounded-xl">
-                                    Syncing metadata...
-                                </div>
+                    {/* Notification System */}
+                    <div className="relative" ref={dropdownRef}>
+                        <button
+                            onClick={() => setShowDropdown(!showDropdown)}
+                            className={`p-2 rounded-lg transition-all relative ${showDropdown ? 'bg-[#F3F4F6] text-[#4F46E5]' : 'text-[#6B7280] hover:bg-[#F9FAFB] hover:text-[#111827]'}`}
+                        >
+                            <Bell size={16} strokeWidth={2.2} className={unreadCount > 0 ? 'animate-swing' : ''} />
+                            {unreadCount > 0 && (
+                                <span className="absolute top-1.5 right-1.5 bg-[#EF4444] border-2 border-white rounded-full w-2.5 h-2.5 animate-pulse"></span>
                             )}
-                        </div>
+                        </button>
 
-                        <div className="bg-[#EEF2FF] p-6 rounded-2xl border border-[#E0E7FF]">
-                            <h3 className="text-[#4F46E5] text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2">
-                                <Smartphone size={14} /> System Access
-                            </h3>
-                            <p className="text-[#6B7280] text-xs leading-relaxed font-medium mb-4">
-                                Your profile is synced across all workspace nodes. Changes may take up to 60 seconds to propagate across the workspace.
-                            </p>
-                            <button
-                                onClick={() => setShowLogoutModal(true)}
-                                className="w-full bg-white text-[#EF4444] border border-[#FECACA] hover:bg-[#FEF2F2] hover:border-[#FCA5A5] py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2"
-                            >
-                                <LogOut size={14} /> Logout All Devices
-                            </button>
-                        </div>
+                        {showDropdown && (
+                            <div className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-xl z-50 overflow-hidden border border-[#E5E7EB] animate-in fade-in slide-in-from-top-1">
+                                <div className="px-4 py-3 border-b border-[#F3F4F6] flex items-center justify-between bg-white">
+                                    <span className="text-[#111827] text-xs font-bold tracking-tight">Activity</span>
+                                    {unreadCount > 0 && <span className="text-[#4F46E5] text-[10px] font-bold bg-[#EEF2FF] px-2 py-0.5 rounded-full">{unreadCount} New</span>}
+                                </div>
+                                <div className="max-h-72 overflow-y-auto">
+                                    {notifications.length === 0 ? (
+                                        <div className="py-12 flex flex-col items-center justify-center text-center px-4">
+                                            <div className="w-10 h-10 bg-[#FAFAFA] rounded-full flex items-center justify-center mb-3">
+                                                <Inbox size={18} className="text-[#D1D5DB]" />
+                                            </div>
+                                            <p className="text-[#9CA3AF] text-[11px] font-medium leading-tight">Your notification queue is currently empty.</p>
+                                        </div>
+                                    ) : (
+                                        notifications.map((n) => (
+                                            <div
+                                                key={n._id}
+                                                className={`px-4 py-3 border-b border-[#F9FAFB] transition-all cursor-pointer flex items-start gap-3 last:border-0 ${n.isRead ? 'opacity-60 grayscale-[0.5]' : 'bg-[#EEF2FF]/20 hover:bg-[#EEF2FF]/40'}`}
+                                                onClick={() => markRead(n._id)}
+                                            >
+                                                <div className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${n.isRead ? 'bg-[#D1D5DB]' : 'bg-[#4F46E5]'}`}></div>
+                                                <div className="flex-1">
+                                                    <p className={`text-[#374151] text-[12px] leading-[1.4] mb-1 ${!n.isRead ? 'font-bold' : 'font-medium'}`}>{n.message}</p>
+                                                    <span className="text-[10px] text-[#9CA3AF] font-bold uppercase tracking-wider">Just now</span>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                                {notifications.length > 0 && (
+                                    <div className="px-4 py-2 border-t border-[#F3F4F6] bg-[#FAFAFA] text-center">
+                                        <button className="text-[10px] font-bold text-[#6B7280] hover:text-[#4F46E5] transition-colors">View All Activity</button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
 
-                    {/* Main Settings Form */}
-                    <div className="lg:col-span-8">
-                        <div className="bg-white p-10 rounded-2xl border border-[#E5E7EB] shadow-sm">
-                            <form onSubmit={updateProfile} className="space-y-8">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    <div className="space-y-3">
-                                        <label className="text-xs font-bold text-[#6B7280] uppercase tracking-wider flex items-center gap-2">
-                                            <User size={14} className="text-[#4F46E5]" /> Display Name
-                                        </label>
-                                        <input
-                                            value={name}
-                                            onChange={(e) => setName(e.target.value)}
-                                            className="w-full bg-[#FAFAFA] text-[#111827] px-4 py-3 rounded-xl border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/10 focus:bg-white focus:border-[#4F46E5] transition-all font-bold placeholder:text-[#9CA3AF]"
-                                            placeholder="Enter your name"
-                                        />
-                                    </div>
-
-                                    <div className="space-y-3">
-                                        <label className="text-xs font-bold text-[#6B7280] uppercase tracking-wider flex items-center gap-2">
-                                            <Mail size={14} className="text-[#4F46E5]" /> Email Address
-                                        </label>
-                                        <input
-                                            value={email}
-                                            onChange={(e) => setEmail(e.target.value)}
-                                            className="w-full bg-[#FAFAFA] text-[#111827] px-4 py-3 rounded-xl border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/10 focus:bg-white focus:border-[#4F46E5] transition-all font-bold placeholder:text-[#9CA3AF]"
-                                            placeholder="you@company.com"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="pt-10 border-t border-[#F3F4F6]">
-                                    <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-                                        <p className="text-[#6B7280] text-xs font-medium max-w-sm">
-                                            Ensure your email is active to receive security notifications and nexus updates.
-                                        </p>
-                                        <button
-                                            disabled={loading}
-                                            className="w-full md:w-auto bg-[#111827] hover:bg-[#1f2937] text-white px-10 py-3.5 rounded-xl font-bold text-sm shadow-xl transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
-                                        >
-                                            <Save size={18} /> Save Settings
-                                        </button>
-                                    </div>
-                                </div>
-                            </form>
-                        </div>
+                    {/* User Profile Action Area */}
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => navigate('/profile')}
+                            className="flex items-center gap-2 p-1 rounded-xl hover:bg-[#F9FAFB] transition-all group border border-transparent hover:border-[#F3F4F6]"
+                        >
+                            <div className="relative">
+                                <img
+                                    src={user?.avatar ? `${import.meta.env.VITE_API_URL}${user.avatar}` : '/default-avatar.png'}
+                                    className="w-7 h-7 rounded-lg object-cover ring-2 ring-white shadow-sm transition-transform group-hover:scale-105"
+                                />
+                                <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-[#10B981] border-2 border-white rounded-full"></div>
+                            </div>
+                            <div className="hidden lg:block pr-1">
+                                <div className="text-[#111827] font-bold text-xs tracking-tight leading-none">{user?.name}</div>
+                            </div>
+                        </button>
+                        <button
+                            onClick={() => {
+                                logout();
+                                toast.success('Logged out successfully');
+                            }}
+                            className="p-1.5 text-[#9CA3AF] hover:text-[#EF4444] hover:bg-rose-50 rounded-lg transition-all"
+                            title="Sign Out"
+                        >
+                            <LogOut size={16} strokeWidth={2} />
+                        </button>
                     </div>
                 </div>
             </div>
-        </div>
+        </nav>
     );
 }
