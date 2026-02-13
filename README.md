@@ -61,19 +61,21 @@ A modern, full-stack Task Management application featuring real-time updates, se
 ### Backend (.env)
 Create a `.env` file in the `backend` directory:
 ```env
-MONGO_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net/dbname
-JWT_SECRET=your_super_secure_secret
-PORT=3000
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your_email@gmail.com
-SMTP_PASS=your_app_specific_password
-FRONTEND_URL=http://localhost:5173
+MONGO_URI=
+JWT_SECRET=
+PORT=
+SMTP_HOST=
+SMTP_PORT=
+SMTP_USER=
+SMTP_PASS=
+FRONTEND_URL=
+
 ```
 
 ### Frontend (.env)
 Create a `.env` file in the `frontend` directory:
 ```env
-VITE_API_URL=http://localhost:3000
-VITE_SOCKET_URL=http://localhost:3000
+VITE_API_URL=
+VITE_SOCKET_URL=
+
 ```
