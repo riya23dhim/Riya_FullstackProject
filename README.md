@@ -2,8 +2,8 @@
 
 A modern, full-stack Task Management application featuring real-time updates, secure authentication, and a responsive dashboard.
 Livelink:
-Vercel https://riya-fullstack-project-yi9q.vercel.app/
-render Backned https://riya-fullstackproject.onrender.com
+- Vercel https://riya-fullstack-project-yi9q.vercel.app/
+- render Backned https://riya-fullstackproject.onrender.com
 ## Tech Stack
 
 ### Frontend
