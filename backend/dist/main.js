@@ -12,7 +12,7 @@ async function bootstrap() {
     }));
     app.useGlobalFilters(new http_exception_filter_1.HttpExceptionFilter());
     app.enableCors({
-        origin: ['http://localhost:5173', 'http://localhost:5174'],
+        origin: process.env.FRONTEND_URL,
         credentials: true,
     });
     await app.listen(process.env.PORT ?? 3000);
