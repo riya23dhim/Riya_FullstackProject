@@ -274,13 +274,8 @@ src={
                         <div className="p-6 border-b border-[#F3F4F6] flex justify-between items-center">
                             <div className="flex items-center space-x-4">
                                 <img
-src={
-  u.avatar
-    ? u.avatar.startsWith('http')
-      ? u.avatar
-      : `${import.meta.env.VITE_API_URL}${u.avatar}`
-    : '/default-avatar.png'
-}
+                                    src={selectedUser.avatar ? (selectedUser.avatar.startsWith('http') ? selectedUser.avatar : `${import.meta.env.VITE_API_URL}${selectedUser.avatar}`) : '/default-avatar.png'}
+
                                     className="w-10 h-10 rounded-xl object-cover shadow-sm bg-[#FAFAFA]"
                                     alt=""
                                 />
