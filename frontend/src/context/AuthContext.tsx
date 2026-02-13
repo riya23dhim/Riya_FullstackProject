@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import { api } from '../api/axios';
+
 import { userApi } from '../api/user.api';
 import type { User, AuthTokens } from '../types/user';
 
