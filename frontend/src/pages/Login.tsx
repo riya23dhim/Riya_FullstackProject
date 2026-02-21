@@ -5,6 +5,7 @@ import { authApi } from '../api/auth.api';
 import { AppWindow, ArrowRight } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { getErrorMessage } from '../utils/error';
+import {Link} from 'react-router-dom';
 import {useNavigate} from 'react-router-dom';
     export default function Login() {
     const { register, handleSubmit, formState: { errors } } = useForm();
@@ -69,7 +70,7 @@ import {useNavigate} from 'react-router-dom';
 
                         <div className="pt-6 text-center text-sm">
                             <p className="text-[#6B7280] font-medium">
-                                Don't have a workspace? <button onClick={()=>navigate("/signup")}>Get started for free</button>
+                                Don't have a workspace? <Link to='/signup'>get started</Link>
                             </p>
                         </div>
                     </form>
