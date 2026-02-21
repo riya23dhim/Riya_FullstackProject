@@ -5,8 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { AppWindow, ArrowRight } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { getErrorMessage } from '../utils/error';
-
-export default function Login() {
+import {useNavigate} from 'react-router-dom';
+    export default function Login() {
     const { register, handleSubmit, formState: { errors } } = useForm();
     const { login } = useAuth();
     const navigate = useNavigate();
@@ -69,7 +69,7 @@ export default function Login() {
 
                         <div className="pt-6 text-center text-sm">
                             <p className="text-[#6B7280] font-medium">
-                                Don't have a workspace? <a href="/signup" className="text-[#4F46E5] hover:underline font-bold ml-1">Get started for free</a>
+                                Don't have a workspace? <button onClick={()=>navigate("/signup")}>Get started for free</button>
                             </p>
                         </div>
                     </form>
